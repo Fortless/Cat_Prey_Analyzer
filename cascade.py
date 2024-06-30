@@ -5,7 +5,9 @@ import pytz
 from datetime import datetime
 from collections import deque
 from threading import Thread
+import yaml
 from multiprocessing import Process
+import requests
 import telegram
 from telegram.ext import Updater, CommandHandler, Filters, MessageHandler
 import xml.etree.ElementTree as ET
@@ -68,7 +70,14 @@ class Spec_Event_Handler():
             #self.log_to_csv(img_event_obj=single_cascade)
 
 class Sequential_Cascade_Feeder():
-    def __init__(self):
+    def __init__(self, config_path="config.yaml"):
+        with open(config_path, 'r') as configstream:
+            self.config = yaml.safe_load(configstream)
+
+        homeassistant_webhook = self.config.get('homeassistant_webhook', {})
+        self.prey_detected_webhook = homeassistant_webhook.get('prey_detected_webhook', '')
+        self.no_prey_detected_webhook = homeassistant_webhook.get('no_prey_detected_webhook', '')
+
         self.log_dir = os.path.join(os.getcwd(), 'log')
         print('Log Dir:', self.log_dir)
         self.event_nr = 0
@@ -145,7 +154,7 @@ class Sequential_Cascade_Feeder():
                                  'PC_Class':img_obj.pc_prey_class, 'PC_Val':img_obj.pc_prey_val,
                                  'PC_Time':img_obj.pc_inference_time, 'Total_Time':img_obj.total_inference_time})
 
-    def send_prey_message(self, event_objects, cumuli):
+    def send_prey_message(self, event_objects, cumuli, webhookurl):
         prey_vals = [x.pc_prey_val for x in event_objects]
         max_prey_index = prey_vals.index(max(filter(lambda x: x is not None, prey_vals)))
 
@@ -161,9 +170,11 @@ class Sequential_Cascade_Feeder():
         sender_img = event_objects[max_prey_index].output_img
         caption = 'Cumuli: ' + str(cumuli) + ' => PREY IN DA HOUSE!' + ' 🐁🐁🐁' + event_str
         self.bot.send_img(img=sender_img, caption=caption)
+        if webhookurl:
+            requests.post(webhookurl)
         return
 
-    def send_no_prey_message(self, event_objects, cumuli):
+    def send_no_prey_message(self, event_objects, cumuli, webhookurl):
         prey_vals = [x.pc_prey_val for x in event_objects]
         min_prey_index = prey_vals.index(min(filter(lambda x: x is not None, prey_vals)))
 
@@ -179,6 +190,8 @@ class Sequential_Cascade_Feeder():
         sender_img = event_objects[min_prey_index].output_img
         caption = 'Cumuli: ' + str(cumuli) + ' => Cat is clean...' + ' 🐱' + event_str
         self.bot.send_img(img=sender_img, caption=caption)
+        if webhookurl:
+            requests.post(webhookurl)
         return
 
     def send_dk_message(self, event_objects, cumuli):
@@ -250,7 +263,7 @@ class Sequential_Cascade_Feeder():
                 if self.cumulus_points / self.face_counter > self.cumulus_no_prey_threshold:
                     self.NO_PREY_FLAG = True
                     print('NO PREY DETECTED... YOU CLEAN...')
-                    p = Process(target=self.send_no_prey_message, args=(self.event_objects, self.cumulus_points / self.face_counter,), daemon=True)
+                    p = Process(target=self.send_no_prey_message, args=(self.event_objects, self.cumulus_points / self.face_counter, webhookurl=self.no_prey_detected_webhook,), daemon=True)
                     p.start()
                     self.processing_pool.append(p)
                     #self.log_event_to_csv(event_obj=self.event_objects, queues_cumuli_in_event=self.queues_cumuli_in_event, event_nr=self.event_nr)
@@ -258,7 +271,7 @@ class Sequential_Cascade_Feeder():
                 elif self.cumulus_points / self.face_counter < self.cumulus_prey_threshold:
                     self.PREY_FLAG = True
                     print('IT IS A PREY!!!!!')
-                    p = Process(target=self.send_prey_message, args=(self.event_objects, self.cumulus_points / self.face_counter,), daemon=True)
+                    p = Process(target=self.send_prey_message, args=(self.event_objects, self.cumulus_points / self.face_counter, webhookurl=self.prey_detected_webhook,), daemon=True)
                     p.start()
                     self.processing_pool.append(p)
                     #self.log_event_to_csv(event_obj=self.event_objects, queues_cumuli_in_event=self.queues_cumuli_in_event, event_nr=self.event_nr)
@@ -623,13 +636,12 @@ class Cascade:
         return img
 
 class NodeBot():
-    def __init__(self):
-        def __init__(self, config_path='config.yaml'):
-            with open(config_path, 'r') as config_file:
-                config = yaml.safe_load(config_file)
+    def __init__(self, config_path='config.yaml'):
+        with open(config_path, 'r') as config_file:
+            config = yaml.safe_load(config_file)
 
-            self.CHAT_ID = config['node_bot']['chat_id']
-            self.BOT_TOKEN = config['node_bot']['bot_token']
+        self.CHAT_ID = config['node_bot']['chat_id']
+        self.BOT_TOKEN = config['node_bot']['bot_token']
 
         self.last_msg_id = 0
         self.bot_updater = Updater(token=self.BOT_TOKEN)

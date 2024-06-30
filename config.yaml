@@ -4,3 +4,8 @@ node_bot:
 
 camera:
   stream_url: "your_stream_url_here"
+
+# Optional HomeAssistant webhook integration
+#homeassistant_webhook:
+#  prey_detected_webhook: "your_webhook_url_here"
+#  no_prey_detected_webhook: "your_webhook_url_here"
