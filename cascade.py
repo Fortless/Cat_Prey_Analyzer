@@ -263,7 +263,7 @@ class Sequential_Cascade_Feeder():
                 if self.cumulus_points / self.face_counter > self.cumulus_no_prey_threshold:
                     self.NO_PREY_FLAG = True
                     print('NO PREY DETECTED... YOU CLEAN...')
-                    p = Process(target=self.send_no_prey_message, args=(self.event_objects, self.cumulus_points / self.face_counter, webhookurl=self.no_prey_detected_webhook,), daemon=True)
+                    p = Process(target=self.send_no_prey_message, args=(self.event_objects, self.cumulus_points / self.face_counter, self.no_prey_detected_webhook,), daemon=True)
                     p.start()
                     self.processing_pool.append(p)
                     #self.log_event_to_csv(event_obj=self.event_objects, queues_cumuli_in_event=self.queues_cumuli_in_event, event_nr=self.event_nr)
@@ -271,7 +271,7 @@ class Sequential_Cascade_Feeder():
                 elif self.cumulus_points / self.face_counter < self.cumulus_prey_threshold:
                     self.PREY_FLAG = True
                     print('IT IS A PREY!!!!!')
-                    p = Process(target=self.send_prey_message, args=(self.event_objects, self.cumulus_points / self.face_counter, webhookurl=self.prey_detected_webhook,), daemon=True)
+                    p = Process(target=self.send_prey_message, args=(self.event_objects, self.cumulus_points / self.face_counter, self.prey_detected_webhook,), daemon=True)
                     p.start()
                     self.processing_pool.append(p)
                     #self.log_event_to_csv(event_obj=self.event_objects, queues_cumuli_in_event=self.queues_cumuli_in_event, event_nr=self.event_nr)

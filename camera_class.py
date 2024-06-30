@@ -1,6 +1,7 @@
 import cv2
 import pytz
 from datetime import datetime
+import sys
 import yaml
 import time
 import gc
@@ -26,7 +27,7 @@ class Camera:
                 print("Error: Couldn't read the frame.")
                 break
 
-            image = frame()
+            image = frame
 
             deque.append(
                 (datetime.now(pytz.timezone('Europe/Zurich')).strftime("%Y_%m_%d_%H-%M-%S.%f"), image)
