@@ -7,6 +7,7 @@ from threading import Thread
 import time
 import gc
 
+
 class Camera:
     def __init__(self):
         # Initialize HTTP stream URL
@@ -17,7 +18,7 @@ class Camera:
         if not cap.isOpened():
             print("Error: Couldn't open the stream.")
             return
-        
+
         while True:
             gc.collect()
             ret, frame = cap.read()
@@ -25,14 +26,16 @@ class Camera:
                 print("Error: Couldn't read the frame.")
                 break
 
-            # Resize frame if necessary, currently keeping the original size
-            image = cv2.resize(frame, (2592, 1944))
+            image = frame()
 
             deque.append(
                 (datetime.now(pytz.timezone('Europe/Zurich')).strftime("%Y_%m_%d_%H-%M-%S.%f"), image)
             )
             # deque.pop()
             print("Quelength: " + str(len(deque)) + "\tFrame size: " + str(sys.getsizeof(frame)))
+
+            # Wait to achieve approximately 5 frames per second
+            time.sleep(0.2)  #
 
             # Simulate the loop break and restart after 60 frames
             if len(deque) >= 60:
