@@ -1,17 +1,17 @@
 import cv2
-import numpy as np
-from collections import deque
 import pytz
 from datetime import datetime
-from threading import Thread
+import yaml
 import time
 import gc
 
 
 class Camera:
-    def __init__(self):
+    def __init__(self, config_path='config.yaml'):
+        with open(config_path, 'r') as config_file:
+            config = yaml.safe_load(config_file)
         # Initialize HTTP stream URL
-        self.stream_url = "http://stream:somepass@localhost:9081/"
+        self.stream_url = config['camera']['stream_url']
 
     def fill_queue(self, deque):
         cap = cv2.VideoCapture(self.stream_url)

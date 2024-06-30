@@ -624,9 +624,12 @@ class Cascade:
 
 class NodeBot():
     def __init__(self):
-        #Insert Chat ID and Bot Token according to Telegram API
-        #self.CHAT_ID = 'xxxxxxxxxxxxx'
-        #self.BOT_TOKEN = 'xxxxxxxxxxxxx'
+        def __init__(self, config_path='config.yaml'):
+            with open(config_path, 'r') as config_file:
+                config = yaml.safe_load(config_file)
+
+            self.CHAT_ID = config['node_bot']['chat_id']
+            self.BOT_TOKEN = config['node_bot']['bot_token']
 
         self.last_msg_id = 0
         self.bot_updater = Updater(token=self.BOT_TOKEN)
